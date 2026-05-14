@@ -1,0 +1,6 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/sprites">
+        <file alias="nivel1/Mocho.png">../sprites/nivel1/Mocho.png</file>
+    </qresource>
+</RCC>
