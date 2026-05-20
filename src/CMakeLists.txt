@@ -12,6 +12,8 @@ add_executable(TejoCosmico
     main.cpp
     juego.cpp
     juego.h
+    mecha.cpp
+    mecha.h
     tejo.cpp
     tejo.h
     recursos.qrc

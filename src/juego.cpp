@@ -1,10 +1,13 @@
 #include "juego.h"
 #include "tejo.h"
+#include "mecha.h"
 
 #include <QPainter>
 #include <QPixmap>
 #include <QMouseEvent>
 #include <QtMath>
+#include <QVector>
+#include <QPointF>
 
 Juego::Juego(QWidget *parent)
     : QMainWindow(parent),
@@ -41,6 +44,21 @@ Juego::Juego(QWidget *parent)
     m_mocho = new QGraphicsPixmapItem(pixmapMocho);
     m_mocho->setPos(375, 400);
     escena->addItem(m_mocho);
+
+    // Crear las mechas (objetivos) del lado derecho de la escena
+    const QVector<QPointF> posicionesMechas = {
+        QPointF(650, 280),
+        QPointF(700, 350),
+        QPointF(650, 420),
+        QPointF(700, 490),
+        QPointF(650, 560)
+    };
+    for (const QPointF &pos : posicionesMechas) {
+        Mecha *m = new Mecha();
+        m->setPos(pos.x(), pos.y());
+        escena->addItem(m);
+        m_mechas.append(m);
+    }
 
     // Game loop: timer de física a ~60 FPS
     m_timerFisica = new QTimer(this);

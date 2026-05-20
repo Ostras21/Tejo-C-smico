@@ -9,6 +9,7 @@
 #include <QList>
 
 class Tejo;
+class Mecha;
 class QMouseEvent;
 
 class Juego : public QMainWindow {
@@ -29,6 +30,7 @@ private:
 
     QGraphicsPixmapItem *m_mocho;
     QList<Tejo*>         m_tejos;
+    QList<Mecha*>        m_mechas;
     QTimer              *m_timerFisica;
     double               m_dtSegundos;
 };
