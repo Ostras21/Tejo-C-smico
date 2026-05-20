@@ -15,7 +15,8 @@ Juego::Juego(QWidget *parent)
       vista(nullptr),
       m_mocho(nullptr),
       m_timerFisica(nullptr),
-      m_dtSegundos(1.0 / 60.0)
+      m_dtSegundos(1.0 / 60.0),
+      m_puntaje(0)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -102,6 +103,38 @@ void Juego::actualizarFisica() {
             escena->removeItem(tejo);
             m_tejos.removeAt(i);
             delete tejo;
+        }
+    }
+
+    // Revisar impactos de tejos contra mechas
+    detectarColisiones();
+}
+
+void Juego::detectarColisiones() {
+    // Recorrer los tejos desde atrás para poder eliminarlos sin invalidar índices
+    for (int i = m_tejos.size() - 1; i >= 0; --i) {
+        Tejo *tejo = m_tejos[i];
+
+        const QList<QGraphicsItem*> items = tejo->collidingItems();
+        for (QGraphicsItem *item : items) {
+            Mecha *mecha = dynamic_cast<Mecha*>(item);
+            if (mecha && !mecha->explotada()) {
+                // La mecha estalla: sumar puntos y eliminarla
+                mecha->detonar();
+                m_puntaje += mecha->puntos();
+
+                escena->removeItem(mecha);
+                m_mechas.removeOne(mecha);
+                delete mecha;
+
+                // El tejo también se destruye al impactar
+                escena->removeItem(tejo);
+                m_tejos.removeAt(i);
+                delete tejo;
+
+                // El tejo ya no existe: dejar de procesar sus colisiones
+                break;
+            }
         }
     }
 }

@@ -25,6 +25,8 @@ private slots:
     void actualizarFisica();
 
 private:
+    void detectarColisiones();
+
     QGraphicsScene *escena;
     QGraphicsView  *vista;
 
@@ -33,6 +35,7 @@ private:
     QList<Mecha*>        m_mechas;
     QTimer              *m_timerFisica;
     double               m_dtSegundos;
+    int                  m_puntaje;
 };
 
 #endif // JUEGO_H
