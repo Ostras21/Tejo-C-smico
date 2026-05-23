@@ -8,6 +8,8 @@
 #include <QtMath>
 #include <QVector>
 #include <QPointF>
+#include <QGraphicsTextItem>
+#include <QFont>
 
 Juego::Juego(QWidget *parent)
     : QMainWindow(parent),
@@ -16,7 +18,10 @@ Juego::Juego(QWidget *parent)
       m_mocho(nullptr),
       m_timerFisica(nullptr),
       m_dtSegundos(1.0 / 60.0),
-      m_puntaje(0)
+      m_puntaje(0),
+      m_tejosRestantes(10),
+      m_textoPuntaje(nullptr),
+      m_textoTejos(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -61,6 +66,17 @@ Juego::Juego(QWidget *parent)
         m_mechas.append(m);
     }
 
+    // HUD: puntaje y tejos restantes
+    m_textoPuntaje = escena->addText("Puntaje: 0");
+    m_textoPuntaje->setPos(10, 5);
+    m_textoPuntaje->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoPuntaje->setFont(QFont("Arial", 14, QFont::Bold));
+
+    m_textoTejos = escena->addText("Tejos: 10");
+    m_textoTejos->setPos(680, 5);
+    m_textoTejos->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoTejos->setFont(QFont("Arial", 14, QFont::Bold));
+
     // Game loop: timer de física a ~60 FPS
     m_timerFisica = new QTimer(this);
     connect(m_timerFisica, &QTimer::timeout, this, &Juego::actualizarFisica);
@@ -70,6 +86,11 @@ Juego::Juego(QWidget *parent)
 Juego::~Juego() {}
 
 void Juego::mousePressEvent(QMouseEvent *event) {
+    if (m_tejosRestantes <= 0) {
+        QMainWindow::mousePressEvent(event);
+        return;
+    }
+
     // Posición del click en coordenadas de la escena
     const QPointF puntoEscena = vista->mapToScene(event->pos());
 
@@ -87,6 +108,9 @@ void Juego::mousePressEvent(QMouseEvent *event) {
     escena->addItem(tejo);
     m_tejos.append(tejo);
     tejo->lanzar(angulo, 700.0);
+
+    --m_tejosRestantes;
+    actualizarHUD();
 
     QMainWindow::mousePressEvent(event);
 }
@@ -110,6 +134,13 @@ void Juego::actualizarFisica() {
     detectarColisiones();
 }
 
+void Juego::actualizarHUD() {
+    if (m_textoPuntaje)
+        m_textoPuntaje->setPlainText(QString("Puntaje: %1").arg(m_puntaje));
+    if (m_textoTejos)
+        m_textoTejos->setPlainText(QString("Tejos: %1").arg(m_tejosRestantes));
+}
+
 void Juego::detectarColisiones() {
     // Recorrer los tejos desde atrás para poder eliminarlos sin invalidar índices
     for (int i = m_tejos.size() - 1; i >= 0; --i) {
@@ -122,6 +153,7 @@ void Juego::detectarColisiones() {
                 // La mecha estalla: sumar puntos y eliminarla
                 mecha->detonar();
                 m_puntaje += mecha->puntos();
+                actualizarHUD();
 
                 escena->removeItem(mecha);
                 m_mechas.removeOne(mecha);

@@ -5,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>
+#include <QGraphicsTextItem>
 #include <QTimer>
 #include <QList>
 
@@ -26,6 +27,7 @@ private slots:
 
 private:
     void detectarColisiones();
+    void actualizarHUD();
 
     QGraphicsScene *escena;
     QGraphicsView  *vista;
@@ -36,6 +38,9 @@ private:
     QTimer              *m_timerFisica;
     double               m_dtSegundos;
     int                  m_puntaje;
+    int                  m_tejosRestantes;
+    QGraphicsTextItem   *m_textoPuntaje;
+    QGraphicsTextItem   *m_textoTejos;
 };
 
 #endif // JUEGO_H
