@@ -20,8 +20,11 @@ Juego::Juego(QWidget *parent)
       m_dtSegundos(1.0 / 60.0),
       m_puntaje(0),
       m_tejosRestantes(10),
+      m_tiempoRestante(90),
+      m_timerNivel(nullptr),
       m_textoPuntaje(nullptr),
-      m_textoTejos(nullptr)
+      m_textoTejos(nullptr),
+      m_textoTiempo(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -77,16 +80,26 @@ Juego::Juego(QWidget *parent)
     m_textoTejos->setDefaultTextColor(QColor(255, 255, 255));
     m_textoTejos->setFont(QFont("Arial", 14, QFont::Bold));
 
+    m_textoTiempo = escena->addText("Tiempo: 01:30");
+    m_textoTiempo->setPos(330, 5);
+    m_textoTiempo->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoTiempo->setFont(QFont("Arial", 14, QFont::Bold));
+
     // Game loop: timer de física a ~60 FPS
     m_timerFisica = new QTimer(this);
     connect(m_timerFisica, &QTimer::timeout, this, &Juego::actualizarFisica);
     m_timerFisica->start(16);
+
+    // Timer del nivel: cuenta regresiva de 90 segundos
+    m_timerNivel = new QTimer(this);
+    connect(m_timerNivel, &QTimer::timeout, this, &Juego::actualizarTiempo);
+    m_timerNivel->start(1000);
 }
 
 Juego::~Juego() {}
 
 void Juego::mousePressEvent(QMouseEvent *event) {
-    if (m_tejosRestantes <= 0) {
+    if (m_tejosRestantes <= 0 || m_tiempoRestante <= 0) {
         QMainWindow::mousePressEvent(event);
         return;
     }
@@ -139,6 +152,18 @@ void Juego::actualizarHUD() {
         m_textoPuntaje->setPlainText(QString("Puntaje: %1").arg(m_puntaje));
     if (m_textoTejos)
         m_textoTejos->setPlainText(QString("Tejos: %1").arg(m_tejosRestantes));
+}
+
+void Juego::actualizarTiempo() {
+    if (m_tiempoRestante <= 0) return;
+    --m_tiempoRestante;
+    int minutos = m_tiempoRestante / 60;
+    int segundos = m_tiempoRestante % 60;
+    m_textoTiempo->setPlainText(QString("Tiempo: %1:%2")
+        .arg(minutos, 2, 10, QChar('0'))
+        .arg(segundos, 2, 10, QChar('0')));
+    if (m_tiempoRestante == 0)
+        m_timerNivel->stop();
 }
 
 void Juego::detectarColisiones() {

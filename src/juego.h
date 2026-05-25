@@ -24,6 +24,7 @@ protected:
 
 private slots:
     void actualizarFisica();
+    void actualizarTiempo();
 
 private:
     void detectarColisiones();
@@ -39,8 +40,11 @@ private:
     double               m_dtSegundos;
     int                  m_puntaje;
     int                  m_tejosRestantes;
+    int                  m_tiempoRestante;
+    QTimer              *m_timerNivel;
     QGraphicsTextItem   *m_textoPuntaje;
     QGraphicsTextItem   *m_textoTejos;
+    QGraphicsTextItem   *m_textoTiempo;
 };
 
 #endif // JUEGO_H
