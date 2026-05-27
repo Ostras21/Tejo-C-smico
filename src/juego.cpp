@@ -1,6 +1,7 @@
 #include "juego.h"
 #include "tejo.h"
 #include "mecha.h"
+#include "roca.h"
 
 #include <QPainter>
 #include <QPixmap>
@@ -67,6 +68,19 @@ Juego::Juego(QWidget *parent)
         m->setPos(pos.x(), pos.y());
         escena->addItem(m);
         m_mechas.append(m);
+    }
+
+    // Crear las rocas oscilantes (obstáculos entre el Mocho y las mechas)
+    struct ParamRoca { double xCentro, yCentro, amplitud, omega, fase; };
+    const QVector<ParamRoca> configRocas = {
+        {400.0, 300.0, 80.0, 2.0, 0.0},
+        {500.0, 350.0, 60.0, 1.5, 1.5},
+        {450.0, 250.0, 70.0, 2.5, 3.0}
+    };
+    for (const ParamRoca &p : configRocas) {
+        Roca *roca = new Roca(p.xCentro, p.yCentro, p.amplitud, p.omega, p.fase);
+        escena->addItem(roca);
+        m_rocas.append(roca);
     }
 
     // HUD: puntaje y tejos restantes
@@ -143,7 +157,12 @@ void Juego::actualizarFisica() {
         }
     }
 
-    // Revisar impactos de tejos contra mechas
+    // Actualizar las rocas oscilantes
+    for (Roca *roca : m_rocas) {
+        roca->actualizar(m_dtSegundos);
+    }
+
+    // Revisar impactos de tejos contra mechas y rocas
     detectarColisiones();
 }
 
@@ -190,6 +209,15 @@ void Juego::detectarColisiones() {
                 delete tejo;
 
                 // El tejo ya no existe: dejar de procesar sus colisiones
+                break;
+            }
+
+            Roca *roca = dynamic_cast<Roca*>(item);
+            if (roca) {
+                // La roca destruye el tejo, pero no suma puntos ni desaparece
+                escena->removeItem(tejo);
+                m_tejos.removeAt(i);
+                delete tejo;
                 break;
             }
         }

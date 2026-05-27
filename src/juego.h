@@ -11,6 +11,7 @@
 
 class Tejo;
 class Mecha;
+class Roca;
 class QMouseEvent;
 
 class Juego : public QMainWindow {
@@ -36,6 +37,7 @@ private:
     QGraphicsPixmapItem *m_mocho;
     QList<Tejo*>         m_tejos;
     QList<Mecha*>        m_mechas;
+    QList<Roca*>         m_rocas;
     QTimer              *m_timerFisica;
     double               m_dtSegundos;
     int                  m_puntaje;
