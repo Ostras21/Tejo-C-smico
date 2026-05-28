@@ -23,9 +23,12 @@ Juego::Juego(QWidget *parent)
       m_tejosRestantes(10),
       m_tiempoRestante(90),
       m_timerNivel(nullptr),
+      m_timerViento(nullptr),
+      m_vientoSolar(0.0),
       m_textoPuntaje(nullptr),
       m_textoTejos(nullptr),
-      m_textoTiempo(nullptr)
+      m_textoTiempo(nullptr),
+      m_textoViento(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -99,6 +102,11 @@ Juego::Juego(QWidget *parent)
     m_textoTiempo->setDefaultTextColor(QColor(255, 255, 255));
     m_textoTiempo->setFont(QFont("Arial", 14, QFont::Bold));
 
+    m_textoViento = escena->addText("Viento: calma");
+    m_textoViento->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoViento->setFont(QFont("Arial", 14, QFont::Bold));
+    m_textoViento->setPos(320, 560);
+
     // Game loop: timer de física a ~60 FPS
     m_timerFisica = new QTimer(this);
     connect(m_timerFisica, &QTimer::timeout, this, &Juego::actualizarFisica);
@@ -108,6 +116,11 @@ Juego::Juego(QWidget *parent)
     m_timerNivel = new QTimer(this);
     connect(m_timerNivel, &QTimer::timeout, this, &Juego::actualizarTiempo);
     m_timerNivel->start(1000);
+
+    // Timer del viento: cambia la perturbación lateral cada 4 segundos
+    m_timerViento = new QTimer(this);
+    connect(m_timerViento, &QTimer::timeout, this, &Juego::cambiarViento);
+    m_timerViento->start(4000);
 }
 
 Juego::~Juego() {}
@@ -146,7 +159,7 @@ void Juego::actualizarFisica() {
     // Actualizar todos los tejos y recoger los que se salieron de la escena
     for (int i = m_tejos.size() - 1; i >= 0; --i) {
         Tejo *tejo = m_tejos[i];
-        tejo->actualizar(m_dtSegundos);
+        tejo->actualizar(m_dtSegundos, m_vientoSolar);
 
         const double tx = tejo->x();
         const double ty = tejo->y();
@@ -181,8 +194,26 @@ void Juego::actualizarTiempo() {
     m_textoTiempo->setPlainText(QString("Tiempo: %1:%2")
         .arg(minutos, 2, 10, QChar('0'))
         .arg(segundos, 2, 10, QChar('0')));
-    if (m_tiempoRestante == 0)
+    if (m_tiempoRestante == 0) {
         m_timerNivel->stop();
+        m_timerViento->stop();
+    }
+}
+
+void Juego::cambiarViento() {
+    // Genera un valor entre -150 y 150 px/s²
+    m_vientoSolar = QRandomGenerator::global()->bounded(301) - 150;
+
+    QString texto;
+    if (m_vientoSolar < -20)
+        texto = QString("Viento: ← %1").arg(static_cast<int>(-m_vientoSolar));
+    else if (m_vientoSolar > 20)
+        texto = QString("Viento: → %1").arg(static_cast<int>(m_vientoSolar));
+    else
+        texto = "Viento: calma";
+
+    if (m_textoViento)
+        m_textoViento->setPlainText(texto);
 }
 
 void Juego::detectarColisiones() {

@@ -8,7 +8,7 @@ public:
     Tejo(QGraphicsItem *parent = nullptr);
 
     void lanzar(double anguloRad, double fuerza);
-    void actualizar(double dt);
+    void actualizar(double dt, double vientoSolar);
     bool enVuelo() const { return m_enVuelo; }
 
 private:

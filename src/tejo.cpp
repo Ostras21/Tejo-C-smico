@@ -36,9 +36,10 @@ void Tejo::lanzar(double anguloRad, double fuerza) {
     m_enVuelo = true;
 }
 
-void Tejo::actualizar(double dt) {
+void Tejo::actualizar(double dt, double vientoSolar) {
     if (!m_enVuelo) return;
 
+    m_vx += vientoSolar * dt;
     m_vy += m_gravedad * dt;
 
     const double nuevaX = x() + m_vx * dt;

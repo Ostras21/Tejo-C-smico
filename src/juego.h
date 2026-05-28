@@ -8,6 +8,7 @@
 #include <QGraphicsTextItem>
 #include <QTimer>
 #include <QList>
+#include <QRandomGenerator>
 
 class Tejo;
 class Mecha;
@@ -26,6 +27,7 @@ protected:
 private slots:
     void actualizarFisica();
     void actualizarTiempo();
+    void cambiarViento();
 
 private:
     void detectarColisiones();
@@ -44,9 +46,12 @@ private:
     int                  m_tejosRestantes;
     int                  m_tiempoRestante;
     QTimer              *m_timerNivel;
+    QTimer              *m_timerViento;
+    double               m_vientoSolar;
     QGraphicsTextItem   *m_textoPuntaje;
     QGraphicsTextItem   *m_textoTejos;
     QGraphicsTextItem   *m_textoTiempo;
+    QGraphicsTextItem   *m_textoViento;
 };
 
 #endif // JUEGO_H
