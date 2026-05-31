@@ -21,14 +21,17 @@ Juego::Juego(QWidget *parent)
       m_dtSegundos(1.0 / 60.0),
       m_puntaje(0),
       m_tejosRestantes(10),
-      m_tiempoRestante(90),
+      m_tiempoRestante(20),
       m_timerNivel(nullptr),
       m_timerViento(nullptr),
       m_vientoSolar(0.0),
       m_textoPuntaje(nullptr),
       m_textoTejos(nullptr),
       m_textoTiempo(nullptr),
-      m_textoViento(nullptr)
+      m_textoViento(nullptr),
+      m_juegoTerminado(false),
+      m_textoResultado(nullptr),
+      m_textoSubresultado(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -126,6 +129,11 @@ Juego::Juego(QWidget *parent)
 Juego::~Juego() {}
 
 void Juego::mousePressEvent(QMouseEvent *event) {
+    if (m_juegoTerminado) {
+        QMainWindow::mousePressEvent(event);
+        return;
+    }
+
     if (m_tejosRestantes <= 0 || m_tiempoRestante <= 0) {
         QMainWindow::mousePressEvent(event);
         return;
@@ -177,6 +185,8 @@ void Juego::actualizarFisica() {
 
     // Revisar impactos de tejos contra mechas y rocas
     detectarColisiones();
+
+    verificarFinJuego();
 }
 
 void Juego::actualizarHUD() {
@@ -197,6 +207,9 @@ void Juego::actualizarTiempo() {
     if (m_tiempoRestante == 0) {
         m_timerNivel->stop();
         m_timerViento->stop();
+        if (!m_mechas.isEmpty()) {
+            terminarJuego(false, "Se acabó el tiempo");
+        }
     }
 }
 
@@ -234,6 +247,11 @@ void Juego::detectarColisiones() {
                 m_mechas.removeOne(mecha);
                 delete mecha;
 
+                if (m_mechas.isEmpty()) {
+                    terminarJuego(true, "¡Destruiste todas las mechas!");
+                    return;
+                }
+
                 // El tejo también se destruye al impactar
                 escena->removeItem(tejo);
                 m_tejos.removeAt(i);
@@ -253,4 +271,43 @@ void Juego::detectarColisiones() {
             }
         }
     }
+}
+
+void Juego::verificarFinJuego() {
+    if (m_juegoTerminado) return;
+    if (m_tejosRestantes == 0 && m_tejos.isEmpty() && !m_mechas.isEmpty()) {
+        terminarJuego(false, "Te quedaste sin tejos");
+    }
+}
+
+void Juego::terminarJuego(bool victoria, const QString &mensaje) {
+    if (m_juegoTerminado) return;
+    m_juegoTerminado = true;
+
+    m_timerFisica->stop();
+    m_timerNivel->stop();
+    m_timerViento->stop();
+
+    m_textoResultado = new QGraphicsTextItem();
+    if (victoria) {
+        m_textoResultado->setPlainText("¡VICTORIA!");
+        m_textoResultado->setDefaultTextColor(QColor(100, 255, 100));
+        m_textoResultado->setFont(QFont("Arial", 48, QFont::Bold));
+        m_textoResultado->setPos(240, 220);
+    } else {
+        m_textoResultado->setPlainText("JUEGO TERMINADO");
+        m_textoResultado->setDefaultTextColor(QColor(255, 80, 80));
+        m_textoResultado->setFont(QFont("Arial", 36, QFont::Bold));
+        m_textoResultado->setPos(190, 220);
+    }
+    escena->addItem(m_textoResultado);
+
+    m_textoSubresultado = new QGraphicsTextItem();
+    m_textoSubresultado->setPlainText(
+        QString("%1\nPuntaje final: %2").arg(mensaje).arg(m_puntaje)
+    );
+    m_textoSubresultado->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoSubresultado->setFont(QFont("Arial", 18));
+    m_textoSubresultado->setPos(240, 310);
+    escena->addItem(m_textoSubresultado);
 }

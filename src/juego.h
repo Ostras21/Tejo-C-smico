@@ -32,6 +32,8 @@ private slots:
 private:
     void detectarColisiones();
     void actualizarHUD();
+    void terminarJuego(bool victoria, const QString &mensaje);
+    void verificarFinJuego();
 
     QGraphicsScene *escena;
     QGraphicsView  *vista;
@@ -52,6 +54,9 @@ private:
     QGraphicsTextItem   *m_textoTejos;
     QGraphicsTextItem   *m_textoTiempo;
     QGraphicsTextItem   *m_textoViento;
+    bool                 m_juegoTerminado;
+    QGraphicsTextItem   *m_textoResultado;
+    QGraphicsTextItem   *m_textoSubresultado;
 };
 
 #endif // JUEGO_H
