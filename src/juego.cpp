@@ -3,6 +3,7 @@
 #include "mecha.h"
 #include "roca.h"
 #include "enemigo.h"
+#include "comandante.h"
 
 #include <QPainter>
 #include <QPixmap>
@@ -33,7 +34,8 @@ Juego::Juego(QWidget *parent)
       m_juegoTerminado(false),
       m_textoResultado(nullptr),
       m_textoSubresultado(nullptr),
-      m_nivelActual(1)
+      m_nivelActual(1),
+      m_comandante(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -159,6 +161,9 @@ void Juego::mousePressEvent(QMouseEvent *event) {
     m_tejos.append(tejo);
     tejo->lanzar(angulo, 700.0);
 
+    if (m_comandante && m_nivelActual == 2)
+        m_comandante->aprender(puntoEscena.x(), puntoEscena.y());
+
     --m_tejosRestantes;
     actualizarHUD();
 
@@ -191,10 +196,15 @@ void Juego::actualizarFisica() {
         const double mochoY = m_mocho->y() + 40.0;
         for (int i = m_enemigos.size() - 1; i >= 0; --i) {
             Enemigo *enemigo = m_enemigos[i];
-            enemigo->actualizar(m_dtSegundos, mochoX, mochoY);
+            const bool esComandante = (m_comandante && enemigo == m_comandante);
+            if (esComandante)
+                m_comandante->actualizar(m_dtSegundos, mochoX, mochoY);
+            else
+                enemigo->actualizar(m_dtSegundos, mochoX, mochoY);
 
-            const double cx = enemigo->x() + 15.0;
-            const double cy = enemigo->y() + 15.0;
+            const double halfSize = esComandante ? 25.0 : 15.0;
+            const double cx = enemigo->x() + halfSize;
+            const double cy = enemigo->y() + halfSize;
             const double ddx = cx - mochoX;
             const double ddy = cy - mochoY;
             if (qSqrt(ddx * ddx + ddy * ddy) < 30.0) {
@@ -285,6 +295,27 @@ void Juego::detectarColisiones() {
             Roca *roca = dynamic_cast<Roca*>(item);
             if (roca) {
                 // La roca destruye el tejo, pero no suma puntos ni desaparece
+                escena->removeItem(tejo);
+                m_tejos.removeAt(i);
+                delete tejo;
+                break;
+            }
+
+            ComandanteAlien *cmd = dynamic_cast<ComandanteAlien*>(item);
+            if (cmd && !cmd->destruido()) {
+                cmd->recibirImpacto();
+                if (cmd->destruido()) {
+                    m_puntaje += 500;
+                    actualizarHUD();
+                    escena->removeItem(cmd);
+                    m_enemigos.removeOne(cmd);
+                    m_comandante = nullptr;
+                    delete cmd;
+                    if (m_enemigos.isEmpty()) {
+                        terminarJuego(true, "¡Destruiste a todos los invasores!");
+                        return;
+                    }
+                }
                 escena->removeItem(tejo);
                 m_tejos.removeAt(i);
                 delete tejo;
@@ -390,6 +421,7 @@ void Juego::limpiarEscena() {
         delete enemigo;
     }
     m_enemigos.clear();
+    m_comandante = nullptr;
 
     auto limpiarTexto = [this](QGraphicsTextItem *&texto) {
         if (texto) {
@@ -450,6 +482,10 @@ void Juego::cargarNivel2() {
         escena->addItem(e);
         m_enemigos.append(e);
     }
+
+    m_comandante = new ComandanteAlien(100, 300);
+    escena->addItem(m_comandante);
+    m_enemigos.append(m_comandante);
 
     m_timerFisica->start(16);
     m_timerNivel->start(1000);

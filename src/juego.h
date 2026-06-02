@@ -14,6 +14,7 @@ class Tejo;
 class Mecha;
 class Roca;
 class Enemigo;
+class ComandanteAlien;
 class QMouseEvent;
 
 class Juego : public QMainWindow {
@@ -62,6 +63,7 @@ private:
     QGraphicsTextItem   *m_textoResultado;
     QGraphicsTextItem   *m_textoSubresultado;
     int                  m_nivelActual;
+    ComandanteAlien     *m_comandante;
 };
 
 #endif // JUEGO_H
