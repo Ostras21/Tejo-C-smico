@@ -13,6 +13,7 @@
 class Tejo;
 class Mecha;
 class Roca;
+class Enemigo;
 class QMouseEvent;
 
 class Juego : public QMainWindow {
@@ -34,6 +35,8 @@ private:
     void actualizarHUD();
     void terminarJuego(bool victoria, const QString &mensaje);
     void verificarFinJuego();
+    void cargarNivel2();
+    void limpiarEscena();
 
     QGraphicsScene *escena;
     QGraphicsView  *vista;
@@ -42,6 +45,7 @@ private:
     QList<Tejo*>         m_tejos;
     QList<Mecha*>        m_mechas;
     QList<Roca*>         m_rocas;
+    QList<Enemigo*>      m_enemigos;
     QTimer              *m_timerFisica;
     double               m_dtSegundos;
     int                  m_puntaje;
@@ -57,6 +61,7 @@ private:
     bool                 m_juegoTerminado;
     QGraphicsTextItem   *m_textoResultado;
     QGraphicsTextItem   *m_textoSubresultado;
+    int                  m_nivelActual;
 };
 
 #endif // JUEGO_H

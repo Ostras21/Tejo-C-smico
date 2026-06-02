@@ -10,6 +10,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 add_executable(TejoCosmico
     main.cpp
+    enemigo.cpp
+    enemigo.h
     juego.cpp
     juego.h
     mecha.cpp

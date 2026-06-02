@@ -2,6 +2,7 @@
 #include "tejo.h"
 #include "mecha.h"
 #include "roca.h"
+#include "enemigo.h"
 
 #include <QPainter>
 #include <QPixmap>
@@ -21,7 +22,7 @@ Juego::Juego(QWidget *parent)
       m_dtSegundos(1.0 / 60.0),
       m_puntaje(0),
       m_tejosRestantes(10),
-      m_tiempoRestante(20),
+      m_tiempoRestante(90),
       m_timerNivel(nullptr),
       m_timerViento(nullptr),
       m_vientoSolar(0.0),
@@ -31,7 +32,8 @@ Juego::Juego(QWidget *parent)
       m_textoViento(nullptr),
       m_juegoTerminado(false),
       m_textoResultado(nullptr),
-      m_textoSubresultado(nullptr)
+      m_textoSubresultado(nullptr),
+      m_nivelActual(1)
 {
     setWindowTitle("Tejo Cósmico");
     resize(800, 600);
@@ -183,7 +185,26 @@ void Juego::actualizarFisica() {
         roca->actualizar(m_dtSegundos);
     }
 
-    // Revisar impactos de tejos contra mechas y rocas
+    // Actualizar enemigos y comprobar si alcanzaron al Mocho (Nivel 2)
+    if (m_nivelActual == 2) {
+        const double mochoX = m_mocho->x() + 25.0;
+        const double mochoY = m_mocho->y() + 40.0;
+        for (int i = m_enemigos.size() - 1; i >= 0; --i) {
+            Enemigo *enemigo = m_enemigos[i];
+            enemigo->actualizar(m_dtSegundos, mochoX, mochoY);
+
+            const double cx = enemigo->x() + 15.0;
+            const double cy = enemigo->y() + 15.0;
+            const double ddx = cx - mochoX;
+            const double ddy = cy - mochoY;
+            if (qSqrt(ddx * ddx + ddy * ddy) < 30.0) {
+                terminarJuego(false, "Un enemigo te alcanzó");
+                return;
+            }
+        }
+    }
+
+    // Revisar impactos de tejos contra mechas, rocas y enemigos
     detectarColisiones();
 
     verificarFinJuego();
@@ -207,7 +228,7 @@ void Juego::actualizarTiempo() {
     if (m_tiempoRestante == 0) {
         m_timerNivel->stop();
         m_timerViento->stop();
-        if (!m_mechas.isEmpty()) {
+        if (!m_mechas.isEmpty() || !m_enemigos.isEmpty()) {
             terminarJuego(false, "Se acabó el tiempo");
         }
     }
@@ -269,13 +290,35 @@ void Juego::detectarColisiones() {
                 delete tejo;
                 break;
             }
+
+            Enemigo *enemigo = dynamic_cast<Enemigo*>(item);
+            if (enemigo && !enemigo->destruido()) {
+                enemigo->recibirImpacto();
+                if (enemigo->destruido()) {
+                    m_puntaje += 200;
+                    actualizarHUD();
+                    escena->removeItem(enemigo);
+                    m_enemigos.removeOne(enemigo);
+                    delete enemigo;
+                    if (m_enemigos.isEmpty()) {
+                        terminarJuego(true, "¡Destruiste a todos los invasores!");
+                        return;
+                    }
+                }
+                escena->removeItem(tejo);
+                m_tejos.removeAt(i);
+                delete tejo;
+                break;
+            }
         }
     }
 }
 
 void Juego::verificarFinJuego() {
     if (m_juegoTerminado) return;
-    if (m_tejosRestantes == 0 && m_tejos.isEmpty() && !m_mechas.isEmpty()) {
+    if (m_nivelActual == 1 && m_tejosRestantes == 0 && m_tejos.isEmpty() && !m_mechas.isEmpty()) {
+        terminarJuego(false, "Te quedaste sin tejos");
+    } else if (m_nivelActual == 2 && m_tejosRestantes == 0 && m_tejos.isEmpty() && !m_enemigos.isEmpty()) {
         terminarJuego(false, "Te quedaste sin tejos");
     }
 }
@@ -287,6 +330,17 @@ void Juego::terminarJuego(bool victoria, const QString &mensaje) {
     m_timerFisica->stop();
     m_timerNivel->stop();
     m_timerViento->stop();
+
+    if (victoria && m_nivelActual == 1) {
+        m_textoResultado = new QGraphicsTextItem();
+        m_textoResultado->setPlainText("¡Pasando al Nivel 2!");
+        m_textoResultado->setDefaultTextColor(QColor(100, 255, 100));
+        m_textoResultado->setFont(QFont("Arial", 32, QFont::Bold));
+        m_textoResultado->setPos(185, 260);
+        escena->addItem(m_textoResultado);
+        QTimer::singleShot(2500, this, &Juego::cargarNivel2);
+        return;
+    }
 
     m_textoResultado = new QGraphicsTextItem();
     if (victoria) {
@@ -310,4 +364,94 @@ void Juego::terminarJuego(bool victoria, const QString &mensaje) {
     m_textoSubresultado->setFont(QFont("Arial", 18));
     m_textoSubresultado->setPos(240, 310);
     escena->addItem(m_textoSubresultado);
+}
+
+void Juego::limpiarEscena() {
+    for (Mecha *mecha : m_mechas) {
+        escena->removeItem(mecha);
+        delete mecha;
+    }
+    m_mechas.clear();
+
+    for (Roca *roca : m_rocas) {
+        escena->removeItem(roca);
+        delete roca;
+    }
+    m_rocas.clear();
+
+    for (Tejo *tejo : m_tejos) {
+        escena->removeItem(tejo);
+        delete tejo;
+    }
+    m_tejos.clear();
+
+    for (Enemigo *enemigo : m_enemigos) {
+        escena->removeItem(enemigo);
+        delete enemigo;
+    }
+    m_enemigos.clear();
+
+    auto limpiarTexto = [this](QGraphicsTextItem *&texto) {
+        if (texto) {
+            escena->removeItem(texto);
+            delete texto;
+            texto = nullptr;
+        }
+    };
+    limpiarTexto(m_textoPuntaje);
+    limpiarTexto(m_textoTejos);
+    limpiarTexto(m_textoTiempo);
+    limpiarTexto(m_textoViento);
+    limpiarTexto(m_textoResultado);
+    limpiarTexto(m_textoSubresultado);
+}
+
+void Juego::cargarNivel2() {
+    m_nivelActual = 2;
+    m_juegoTerminado = false;
+    limpiarEscena();
+
+    m_puntaje = 0;
+    m_tejosRestantes = 15;
+    m_tiempoRestante = 60;
+
+    const int mochoWidth  = m_mocho->pixmap().width();
+    const int mochoHeight = m_mocho->pixmap().height();
+    m_mocho->setPos(400 - mochoWidth / 2, 300 - mochoHeight / 2);
+
+    m_textoPuntaje = escena->addText("Puntaje: 0");
+    m_textoPuntaje->setPos(10, 5);
+    m_textoPuntaje->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoPuntaje->setFont(QFont("Arial", 14, QFont::Bold));
+
+    m_textoTejos = escena->addText("Tejos: 15");
+    m_textoTejos->setPos(680, 5);
+    m_textoTejos->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoTejos->setFont(QFont("Arial", 14, QFont::Bold));
+
+    m_textoTiempo = escena->addText("Tiempo: 01:00");
+    m_textoTiempo->setPos(330, 5);
+    m_textoTiempo->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoTiempo->setFont(QFont("Arial", 14, QFont::Bold));
+
+    m_textoViento = escena->addText("Viento: calma");
+    m_textoViento->setDefaultTextColor(QColor(255, 255, 255));
+    m_textoViento->setFont(QFont("Arial", 14, QFont::Bold));
+    m_textoViento->setPos(320, 560);
+
+    const QVector<QPointF> posicionesEnemigos = {
+        QPointF(50,  50),
+        QPointF(750, 50),
+        QPointF(50,  550),
+        QPointF(750, 550)
+    };
+    for (const QPointF &pos : posicionesEnemigos) {
+        Enemigo *e = new Enemigo(pos.x(), pos.y());
+        escena->addItem(e);
+        m_enemigos.append(e);
+    }
+
+    m_timerFisica->start(16);
+    m_timerNivel->start(1000);
+    m_timerViento->start(4000);
 }
