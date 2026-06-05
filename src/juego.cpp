@@ -11,6 +11,10 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QResizeEvent>
+#include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QSoundEffect>
+#include <QUrl>
 #include <QtMath>
 #include <QVector>
 #include <QPointF>
@@ -39,7 +43,14 @@ Juego::Juego(QWidget *parent)
       m_textoSubresultado(nullptr),
       m_textoReinicio(nullptr),
       m_nivelActual(1),
-      m_comandante(nullptr)
+      m_comandante(nullptr),
+      m_musicaFondo(nullptr),
+      m_audioMusica(nullptr),
+      m_efectoExplosion(nullptr),
+      m_efectoEnemigoDestruido(nullptr),
+      m_efectoDerrota(nullptr),
+      m_efectoVictoria(nullptr),
+      m_audioVictoria(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
     setMinimumSize(800, 600);
@@ -144,6 +155,37 @@ Juego::Juego(QWidget *parent)
     m_timerViento = new QTimer(this);
     connect(m_timerViento, &QTimer::timeout, this, &Juego::cambiarViento);
     m_timerViento->start(4000);
+
+    // Música de fondo en loop al 20% de volumen
+    m_musicaFondo = new QMediaPlayer(this);
+    m_audioMusica = new QAudioOutput(this);
+    m_musicaFondo->setAudioOutput(m_audioMusica);
+    m_musicaFondo->setSource(QUrl("qrc:/audio/musica.mp3"));
+    m_audioMusica->setVolume(0.2);
+    m_musicaFondo->setLoops(QMediaPlayer::Infinite);
+    m_musicaFondo->play();
+
+    // Efecto de sonido para explosiones
+    m_efectoExplosion = new QSoundEffect(this);
+    m_efectoExplosion->setSource(QUrl("qrc:/audio/explosion.wav"));
+    m_efectoExplosion->setVolume(0.8);
+
+    // Efecto de enemigo destruido (Nivel 2)
+    m_efectoEnemigoDestruido = new QSoundEffect(this);
+    m_efectoEnemigoDestruido->setSource(QUrl("qrc:/audio/enemigo_destruido.wav"));
+    m_efectoEnemigoDestruido->setVolume(0.8);
+
+    // Efecto de derrota
+    m_efectoDerrota = new QSoundEffect(this);
+    m_efectoDerrota->setSource(QUrl("qrc:/audio/derrota.wav"));
+    m_efectoDerrota->setVolume(0.8);
+
+    // Efecto de victoria (MP3, usa QMediaPlayer)
+    m_efectoVictoria = new QMediaPlayer(this);
+    m_audioVictoria = new QAudioOutput(this);
+    m_efectoVictoria->setAudioOutput(m_audioVictoria);
+    m_efectoVictoria->setSource(QUrl("qrc:/audio/victoria.mp3"));
+    m_audioVictoria->setVolume(0.8);
 }
 
 Juego::~Juego() {}
@@ -297,6 +339,8 @@ void Juego::detectarColisiones() {
                 mecha->detonar();
                 m_puntaje += mecha->puntos();
                 actualizarHUD();
+                if (m_efectoExplosion)
+                    m_efectoExplosion->play();
 
                 escena->removeItem(mecha);
                 m_mechas.removeOne(mecha);
@@ -330,6 +374,8 @@ void Juego::detectarColisiones() {
                 cmd->recibirImpacto();
                 if (cmd->destruido()) {
                     m_puntaje += 500;
+                    if (m_efectoEnemigoDestruido)
+                        m_efectoEnemigoDestruido->play();
                     actualizarHUD();
                     escena->removeItem(cmd);
                     m_enemigos.removeOne(cmd);
@@ -351,6 +397,8 @@ void Juego::detectarColisiones() {
                 enemigo->recibirImpacto();
                 if (enemigo->destruido()) {
                     m_puntaje += 200;
+                    if (m_efectoEnemigoDestruido)
+                        m_efectoEnemigoDestruido->play();
                     actualizarHUD();
                     escena->removeItem(enemigo);
                     m_enemigos.removeOne(enemigo);
@@ -399,11 +447,15 @@ void Juego::terminarJuego(bool victoria, const QString &mensaje) {
 
     m_textoResultado = new QGraphicsTextItem();
     if (victoria) {
+        if (m_efectoVictoria)
+            m_efectoVictoria->play();
         m_textoResultado->setPlainText("¡VICTORIA!");
         m_textoResultado->setDefaultTextColor(QColor(100, 255, 100));
         m_textoResultado->setFont(QFont("Arial", 48, QFont::Bold));
         m_textoResultado->setPos(240, 220);
     } else {
+        if (m_efectoDerrota)
+            m_efectoDerrota->play();
         m_textoResultado->setPlainText("JUEGO TERMINADO");
         m_textoResultado->setDefaultTextColor(QColor(255, 80, 80));
         m_textoResultado->setFont(QFont("Arial", 36, QFont::Bold));

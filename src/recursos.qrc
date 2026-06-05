@@ -10,4 +10,11 @@
         <file alias="nivel2/comandante.png">../sprites/nivel2/comandante.png</file>
         <file alias="nivel2/anillos_de_saturno.png">../sprites/nivel2/anillos_de_saturno.png</file>
     </qresource>
+    <qresource prefix="/audio">
+        <file alias="musica.mp3">../audio/Lasdiabluras.mp3</file>
+        <file alias="explosion.wav">../audio/explosionground.wav</file>
+        <file alias="enemigo_destruido.wav">../audio/Enemydissolves.wav</file>
+        <file alias="victoria.mp3">../audio/Win.mp3</file>
+        <file alias="derrota.wav">../audio/Gameover.wav</file>
+    </qresource>
 </RCC>

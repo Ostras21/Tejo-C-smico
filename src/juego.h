@@ -9,6 +9,9 @@
 #include <QTimer>
 #include <QList>
 #include <QRandomGenerator>
+#include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QSoundEffect>
 
 class Tejo;
 class Mecha;
@@ -70,6 +73,13 @@ private:
     QGraphicsTextItem   *m_textoReinicio;
     int                  m_nivelActual;
     ComandanteAlien     *m_comandante;
+    QMediaPlayer        *m_musicaFondo;
+    QAudioOutput        *m_audioMusica;
+    QSoundEffect        *m_efectoExplosion;
+    QSoundEffect        *m_efectoEnemigoDestruido;
+    QSoundEffect        *m_efectoDerrota;
+    QMediaPlayer        *m_efectoVictoria;
+    QAudioOutput        *m_audioVictoria;
 };
 
 #endif // JUEGO_H
