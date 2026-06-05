@@ -9,7 +9,7 @@
 ComandanteAlien::ComandanteAlien(double x, double y, QGraphicsItem *parent)
     : Enemigo(x, y, parent),
       m_cuadranteObjetivo(0),
-      m_velocidad(50.0),
+      m_velocidad(25.0),
       m_golpesRecibidos(0)
 {
     m_conteoTejos[0] = 0;
@@ -17,32 +17,38 @@ ComandanteAlien::ComandanteAlien(double x, double y, QGraphicsItem *parent)
     m_conteoTejos[2] = 0;
     m_conteoTejos[3] = 0;
 
-    QPixmap pixmap(50, 50);
-    pixmap.fill(Qt::transparent);
+    QPixmap pixmap(":/sprites/nivel2/comandante.png");
+    if (pixmap.isNull()) {
+        QPixmap pix(130, 130);
+        pix.fill(Qt::transparent);
 
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
+        QPainter painter(&pix);
+        painter.setRenderHint(QPainter::Antialiasing);
 
-    painter.setPen(QPen(QColor(100, 20, 150), 2));
-    painter.drawLine(18, 8, 12, 0);
-    painter.drawLine(32, 8, 38, 0);
+        painter.setPen(QPen(QColor(100, 20, 150), 2));
+        painter.drawLine(46, 20, 31, 0);
+        painter.drawLine(84, 20, 99, 0);
 
-    painter.setBrush(QColor(80, 20, 120));
-    painter.setPen(Qt::NoPen);
-    painter.drawEllipse(3, 10, 44, 40);
+        painter.setBrush(QColor(80, 20, 120));
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(7, 26, 116, 104);
 
-    painter.setBrush(QColor(150, 50, 200));
-    painter.drawEllipse(6, 13, 38, 34);
+        painter.setBrush(QColor(150, 50, 200));
+        painter.drawEllipse(15, 33, 100, 89);
 
-    painter.setBrush(QColor(0, 0, 0));
-    painter.drawEllipse(11, 18, 10, 10);
-    painter.drawEllipse(29, 18, 10, 10);
+        painter.setBrush(QColor(0, 0, 0));
+        painter.drawEllipse(27, 47, 26, 26);
+        painter.drawEllipse(77, 47, 26, 26);
 
-    painter.end();
+        painter.end();
 
-    setPixmap(pixmap);
-    setTransformOriginPoint(25, 25);
-    setPos(x - 25, y - 25);
+        setPixmap(pix);
+    } else {
+        pixmap = pixmap.scaled(130, 130, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        setPixmap(pixmap);
+    }
+    setTransformOriginPoint(65, 65);
+    setPos(x - 65, y - 65);
 }
 
 int ComandanteAlien::cuadranteDe(double x, double y) const {
@@ -72,8 +78,8 @@ void ComandanteAlien::actuar(double dt) {
 
     const double tx = centrosX[m_cuadranteObjetivo];
     const double ty = centrosY[m_cuadranteObjetivo];
-    const double cx = x() + 25.0;
-    const double cy = y() + 25.0;
+    const double cx = x() + 65.0;
+    const double cy = y() + 65.0;
     const double dx = tx - cx;
     const double dy = ty - cy;
     const double mag = std::sqrt(dx * dx + dy * dy);

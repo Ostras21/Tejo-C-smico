@@ -12,22 +12,27 @@ Tejo::Tejo(QGraphicsItem *parent)
       m_gravedad(800.0),
       m_enVuelo(false)
 {
-    // Dibujar un círculo gris oscuro con borde negro como sprite provisional.
-    const int radio = 15;
-    const int lado  = radio * 2 + 2; // +2 para que el borde no se recorte
+    QPixmap pixmap(":/sprites/nivel1/tejo.png");
+    if (pixmap.isNull()) {
+        const int radio = 39;
+        const int lado  = radio * 2 + 2;  // 80
 
-    QPixmap pix(lado, lado);
-    pix.fill(Qt::transparent);
+        QPixmap pix(lado, lado);
+        pix.fill(Qt::transparent);
 
-    QPainter painter(&pix);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setBrush(QBrush(QColor(80, 80, 80)));   // gris oscuro
-    painter.setPen(QPen(Qt::black, 2));
-    painter.drawEllipse(1, 1, radio * 2, radio * 2);
-    painter.end();
+        QPainter painter(&pix);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setBrush(QBrush(QColor(80, 80, 80)));
+        painter.setPen(QPen(Qt::black, 2));
+        painter.drawEllipse(1, 1, radio * 2, radio * 2);
+        painter.end();
 
-    setPixmap(pix);
-    setTransformOriginPoint(lado / 2.0, lado / 2.0);
+        setPixmap(pix);
+    } else {
+        pixmap = pixmap.scaled(80, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        setPixmap(pixmap);
+    }
+    setTransformOriginPoint(40, 40);
 }
 
 void Tejo::lanzar(double anguloRad, double fuerza) {

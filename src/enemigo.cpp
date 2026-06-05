@@ -13,28 +13,34 @@ Enemigo::Enemigo(double x, double y, QGraphicsItem *parent)
       m_tiempoZigzag(0.0),
       m_destruido(false)
 {
-    QPixmap pixmap(30, 30);
-    pixmap.fill(Qt::transparent);
+    QPixmap pixmap(":/sprites/nivel2/enemigo.png");
+    if (pixmap.isNull()) {
+        QPixmap pix(85, 85);
+        pix.fill(Qt::transparent);
 
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
+        QPainter painter(&pix);
+        painter.setRenderHint(QPainter::Antialiasing);
 
-    painter.setBrush(QColor(100, 20, 20));
-    painter.setPen(Qt::NoPen);
-    painter.drawEllipse(3, 3, 24, 24);
+        painter.setBrush(QColor(100, 20, 20));
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(7, 7, 71, 71);
 
-    painter.setBrush(QColor(180, 30, 30));
-    painter.drawEllipse(5, 5, 20, 20);
+        painter.setBrush(QColor(180, 30, 30));
+        painter.drawEllipse(13, 13, 59, 59);
 
-    painter.setBrush(QColor(0, 0, 0));
-    painter.drawEllipse(7, 6, 6, 6);
-    painter.drawEllipse(17, 6, 6, 6);
+        painter.setBrush(QColor(0, 0, 0));
+        painter.drawEllipse(18, 17, 17, 17);
+        painter.drawEllipse(50, 17, 17, 17);
 
-    painter.end();
+        painter.end();
 
-    setPixmap(pixmap);
-    setTransformOriginPoint(15, 15);
-    setPos(x - 15, y - 15);
+        setPixmap(pix);
+    } else {
+        pixmap = pixmap.scaled(85, 85, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        setPixmap(pixmap);
+    }
+    setTransformOriginPoint(42, 42);
+    setPos(x - 42, y - 42);
 }
 
 void Enemigo::actualizar(double dt, double mochoX, double mochoY) {
@@ -54,8 +60,8 @@ void Enemigo::actualizar(double dt, double mochoX, double mochoY) {
     const double pdx = -ndy;
     const double pdy =  ndx;
 
-    const double newX = x() + (ndx * 80.0 + pdx * offset) * dt;
-    const double newY = y() + (ndy * 80.0 + pdy * offset) * dt;
+    const double newX = x() + (ndx * 40.0 + pdx * offset) * dt;
+    const double newY = y() + (ndy * 40.0 + pdy * offset) * dt;
     setPos(newX, newY);
 }
 

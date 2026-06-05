@@ -10,30 +10,33 @@ Mecha::Mecha(QGraphicsItem *parent)
       m_puntos(100),
       m_radioExplosion(30.0)
 {
-    // Dibujar el aspecto de la mecha sobre un pixmap transparente
-    QPixmap pixmap(30, 40);
-    pixmap.fill(Qt::transparent);
+    QPixmap pixmap(":/sprites/nivel1/mecha.png");
+    if (pixmap.isNull()) {
+        QPixmap pix(95, 120);
+        pix.fill(Qt::transparent);
 
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
+        QPainter painter(&pix);
+        painter.setRenderHint(QPainter::Antialiasing);
 
-    // Triángulo amarillo-naranja apuntando hacia arriba
-    QPolygon triangulo;
-    triangulo << QPoint(15, 5) << QPoint(5, 35) << QPoint(25, 35);
+        QPolygon triangulo;
+        triangulo << QPoint(47, 9) << QPoint(9, 111) << QPoint(86, 111);
 
-    painter.setBrush(QBrush(QColor(255, 165, 0)));
-    painter.setPen(QPen(Qt::black, 1.5));
-    painter.drawPolygon(triangulo);
+        painter.setBrush(QBrush(QColor(255, 165, 0)));
+        painter.setPen(QPen(Qt::black, 1.5));
+        painter.drawPolygon(triangulo);
 
-    // Chispa roja brillante en la punta
-    painter.setBrush(QBrush(QColor(255, 0, 0)));
-    painter.setPen(Qt::NoPen);
-    painter.drawEllipse(QPointF(15, 5), 3, 3);
+        painter.setBrush(QBrush(QColor(255, 0, 0)));
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(QPointF(47, 9), 8, 8);
 
-    painter.end();
+        painter.end();
 
-    setPixmap(pixmap);
-    setTransformOriginPoint(15, 20);  // centro de la mecha
+        setPixmap(pix);
+    } else {
+        pixmap = pixmap.scaled(95, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        setPixmap(pixmap);
+    }
+    setTransformOriginPoint(47, 60);
 }
 
 void Mecha::detonar() {

@@ -16,6 +16,8 @@ class Roca;
 class Enemigo;
 class ComandanteAlien;
 class QMouseEvent;
+class QKeyEvent;
+class QResizeEvent;
 
 class Juego : public QMainWindow {
     Q_OBJECT
@@ -25,6 +27,8 @@ public:
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     void actualizarFisica();
@@ -38,6 +42,7 @@ private:
     void verificarFinJuego();
     void cargarNivel2();
     void limpiarEscena();
+    void reiniciarNivel();
 
     QGraphicsScene *escena;
     QGraphicsView  *vista;
@@ -62,6 +67,7 @@ private:
     bool                 m_juegoTerminado;
     QGraphicsTextItem   *m_textoResultado;
     QGraphicsTextItem   *m_textoSubresultado;
+    QGraphicsTextItem   *m_textoReinicio;
     int                  m_nivelActual;
     ComandanteAlien     *m_comandante;
 };

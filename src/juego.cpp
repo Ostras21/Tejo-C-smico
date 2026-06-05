@@ -7,7 +7,10 @@
 
 #include <QPainter>
 #include <QPixmap>
+#include <QBrush>
 #include <QMouseEvent>
+#include <QKeyEvent>
+#include <QResizeEvent>
 #include <QtMath>
 #include <QVector>
 #include <QPointF>
@@ -22,7 +25,7 @@ Juego::Juego(QWidget *parent)
       m_timerFisica(nullptr),
       m_dtSegundos(1.0 / 60.0),
       m_puntaje(0),
-      m_tejosRestantes(10),
+      m_tejosRestantes(20),
       m_tiempoRestante(90),
       m_timerNivel(nullptr),
       m_timerViento(nullptr),
@@ -34,22 +37,32 @@ Juego::Juego(QWidget *parent)
       m_juegoTerminado(false),
       m_textoResultado(nullptr),
       m_textoSubresultado(nullptr),
+      m_textoReinicio(nullptr),
       m_nivelActual(1),
       m_comandante(nullptr)
 {
     setWindowTitle("Tejo Cósmico");
-    resize(800, 600);
+    setMinimumSize(800, 600);
+    showMaximized();
 
     // Crear la escena (el espacio donde viven los objetos del juego)
     escena = new QGraphicsScene(this);
     escena->setSceneRect(0, 0, 800, 600);
-    escena->setBackgroundBrush(QColor(20, 20, 50));  // azul oscuro, como el espacio
+    QPixmap fondoNivel1(":/sprites/nivel1/superficie_lunar.png");
+    if (!fondoNivel1.isNull()) {
+        fondoNivel1 = fondoNivel1.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        escena->setBackgroundBrush(QBrush(fondoNivel1));
+    } else {
+        escena->setBackgroundBrush(QColor(20, 20, 50));
+    }
 
     // Crear la vista (la cámara que muestra la escena)
     vista = new QGraphicsView(escena, this);
     vista->setRenderHint(QPainter::Antialiasing);
+    vista->setRenderHint(QPainter::SmoothPixmapTransform, true);
     vista->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     vista->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    vista->fitInView(escena->sceneRect(), Qt::KeepAspectRatio);
 
     // Hacer que la vista ocupe toda la ventana
     setCentralWidget(vista);
@@ -62,16 +75,16 @@ Juego::Juego(QWidget *parent)
 
     // Crear el item con la imagen y colocarlo en el centro inferior de la escena
     m_mocho = new QGraphicsPixmapItem(pixmapMocho);
-    m_mocho->setPos(375, 400);
+    m_mocho->setPos(150, 350);
     escena->addItem(m_mocho);
 
     // Crear las mechas (objetivos) del lado derecho de la escena
     const QVector<QPointF> posicionesMechas = {
-        QPointF(650, 280),
-        QPointF(700, 350),
-        QPointF(650, 420),
-        QPointF(700, 490),
-        QPointF(650, 560)
+        QPointF(700, 180),
+        QPointF(650, 270),
+        QPointF(720, 350),
+        QPointF(660, 420),
+        QPointF(700, 490)
     };
     for (const QPointF &pos : posicionesMechas) {
         Mecha *m = new Mecha();
@@ -83,9 +96,12 @@ Juego::Juego(QWidget *parent)
     // Crear las rocas oscilantes (obstáculos entre el Mocho y las mechas)
     struct ParamRoca { double xCentro, yCentro, amplitud, omega, fase; };
     const QVector<ParamRoca> configRocas = {
-        {400.0, 300.0, 80.0, 2.0, 0.0},
-        {500.0, 350.0, 60.0, 1.5, 1.5},
-        {450.0, 250.0, 70.0, 2.5, 3.0}
+        {350.0, 200.0, 60.0, 2.0, 0.0},
+        {450.0, 280.0, 80.0, 1.5, 1.2},
+        {550.0, 350.0, 70.0, 2.5, 2.5},
+        {400.0, 420.0, 50.0, 1.8, 0.5},
+        {520.0, 480.0, 90.0, 1.3, 3.0},
+        {300.0, 350.0, 65.0, 2.2, 1.8}
     };
     for (const ParamRoca &p : configRocas) {
         Roca *roca = new Roca(p.xCentro, p.yCentro, p.amplitud, p.omega, p.fase);
@@ -99,7 +115,7 @@ Juego::Juego(QWidget *parent)
     m_textoPuntaje->setDefaultTextColor(QColor(255, 255, 255));
     m_textoPuntaje->setFont(QFont("Arial", 14, QFont::Bold));
 
-    m_textoTejos = escena->addText("Tejos: 10");
+    m_textoTejos = escena->addText("Tejos: 20");
     m_textoTejos->setPos(680, 5);
     m_textoTejos->setDefaultTextColor(QColor(255, 255, 255));
     m_textoTejos->setFont(QFont("Arial", 14, QFont::Bold));
@@ -156,7 +172,7 @@ void Juego::mousePressEvent(QMouseEvent *event) {
 
     // Crear el tejo un poco arriba del Mocho y lanzarlo
     Tejo *tejo = new Tejo();
-    tejo->setPos(mochoX + 30, mochoY - 20);
+    tejo->setPos(mochoX + 50, mochoY - 30);
     escena->addItem(tejo);
     m_tejos.append(tejo);
     tejo->lanzar(angulo, 700.0);
@@ -168,6 +184,14 @@ void Juego::mousePressEvent(QMouseEvent *event) {
     actualizarHUD();
 
     QMainWindow::mousePressEvent(event);
+}
+
+void Juego::keyPressEvent(QKeyEvent *event) {
+    if (m_juegoTerminado && event->key() == Qt::Key_R) {
+        reiniciarNivel();
+    } else {
+        QMainWindow::keyPressEvent(event);
+    }
 }
 
 void Juego::actualizarFisica() {
@@ -395,6 +419,13 @@ void Juego::terminarJuego(bool victoria, const QString &mensaje) {
     m_textoSubresultado->setFont(QFont("Arial", 18));
     m_textoSubresultado->setPos(240, 310);
     escena->addItem(m_textoSubresultado);
+
+    m_textoReinicio = new QGraphicsTextItem();
+    m_textoReinicio->setPlainText("Presiona R para reiniciar");
+    m_textoReinicio->setDefaultTextColor(QColor(200, 200, 200));
+    m_textoReinicio->setFont(QFont("Arial", 16));
+    m_textoReinicio->setPos(255, 400);
+    escena->addItem(m_textoReinicio);
 }
 
 void Juego::limpiarEscena() {
@@ -436,9 +467,16 @@ void Juego::limpiarEscena() {
     limpiarTexto(m_textoViento);
     limpiarTexto(m_textoResultado);
     limpiarTexto(m_textoSubresultado);
+    limpiarTexto(m_textoReinicio);
 }
 
 void Juego::cargarNivel2() {
+    QPixmap fondoNivel2(":/sprites/nivel2/anillos_de_saturno.png");
+    if (!fondoNivel2.isNull()) {
+        fondoNivel2 = fondoNivel2.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        escena->setBackgroundBrush(QBrush(fondoNivel2));
+    }
+
     m_nivelActual = 2;
     m_juegoTerminado = false;
     limpiarEscena();
@@ -490,4 +528,84 @@ void Juego::cargarNivel2() {
     m_timerFisica->start(16);
     m_timerNivel->start(1000);
     m_timerViento->start(4000);
+}
+
+void Juego::reiniciarNivel() {
+    int nivelARecargar = m_nivelActual;
+    limpiarEscena();
+    m_juegoTerminado = false;
+    m_puntaje = 0;
+
+    if (nivelARecargar == 1) {
+        m_tejosRestantes = 20;
+        m_tiempoRestante = 90;
+        m_nivelActual = 1;
+
+        m_mocho->setPos(150, 350);
+
+        m_textoPuntaje = escena->addText("Puntaje: 0");
+        m_textoPuntaje->setPos(10, 5);
+        m_textoPuntaje->setDefaultTextColor(QColor(255, 255, 255));
+        m_textoPuntaje->setFont(QFont("Arial", 14, QFont::Bold));
+
+        m_textoTejos = escena->addText("Tejos: 20");
+        m_textoTejos->setPos(680, 5);
+        m_textoTejos->setDefaultTextColor(QColor(255, 255, 255));
+        m_textoTejos->setFont(QFont("Arial", 14, QFont::Bold));
+
+        m_textoTiempo = escena->addText("Tiempo: 01:30");
+        m_textoTiempo->setPos(330, 5);
+        m_textoTiempo->setDefaultTextColor(QColor(255, 255, 255));
+        m_textoTiempo->setFont(QFont("Arial", 14, QFont::Bold));
+
+        m_textoViento = escena->addText("Viento: calma");
+        m_textoViento->setDefaultTextColor(QColor(255, 255, 255));
+        m_textoViento->setFont(QFont("Arial", 14, QFont::Bold));
+        m_textoViento->setPos(320, 560);
+
+        const QVector<QPointF> posicionesMechas = {
+            QPointF(700, 180), QPointF(650, 270), QPointF(720, 350),
+            QPointF(660, 420), QPointF(700, 490)
+        };
+        for (const QPointF &pos : posicionesMechas) {
+            Mecha *m = new Mecha();
+            m->setPos(pos.x(), pos.y());
+            escena->addItem(m);
+            m_mechas.append(m);
+        }
+
+        struct ParamRoca { double xCentro, yCentro, amplitud, omega, fase; };
+        const QVector<ParamRoca> configRocas = {
+            {350.0, 200.0, 60.0, 2.0, 0.0},
+            {450.0, 280.0, 80.0, 1.5, 1.2},
+            {550.0, 350.0, 70.0, 2.5, 2.5},
+            {400.0, 420.0, 50.0, 1.8, 0.5},
+            {520.0, 480.0, 90.0, 1.3, 3.0},
+            {300.0, 350.0, 65.0, 2.2, 1.8}
+        };
+        for (const ParamRoca &p : configRocas) {
+            Roca *roca = new Roca(p.xCentro, p.yCentro, p.amplitud, p.omega, p.fase);
+            escena->addItem(roca);
+            m_rocas.append(roca);
+        }
+
+        QPixmap fondoNivel1(":/sprites/nivel1/superficie_lunar.png");
+        if (!fondoNivel1.isNull()) {
+            fondoNivel1 = fondoNivel1.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            escena->setBackgroundBrush(QBrush(fondoNivel1));
+        }
+
+        m_timerFisica->start(16);
+        m_timerNivel->start(1000);
+        m_timerViento->start(4000);
+    } else {
+        cargarNivel2();
+    }
+}
+
+void Juego::resizeEvent(QResizeEvent *event) {
+    QMainWindow::resizeEvent(event);
+    if (vista && escena) {
+        vista->fitInView(escena->sceneRect(), Qt::KeepAspectRatio);
+    }
 }
