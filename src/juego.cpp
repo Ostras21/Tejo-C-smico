@@ -56,7 +56,6 @@ Juego::Juego(QWidget *parent)
     setMinimumSize(800, 600);
     showMaximized();
 
-    // Crear la escena (el espacio donde viven los objetos del juego)
     escena = new QGraphicsScene(this);
     escena->setSceneRect(0, 0, 800, 600);
     QPixmap fondoNivel1(":/sprites/nivel1/superficie_lunar.png");
@@ -67,7 +66,6 @@ Juego::Juego(QWidget *parent)
         escena->setBackgroundBrush(QColor(20, 20, 50));
     }
 
-    // Crear la vista (la cámara que muestra la escena)
     vista = new QGraphicsView(escena, this);
     vista->setRenderHint(QPainter::Antialiasing);
     vista->setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -75,21 +73,18 @@ Juego::Juego(QWidget *parent)
     vista->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     vista->fitInView(escena->sceneRect(), Qt::KeepAspectRatio);
 
-    // Hacer que la vista ocupe toda la ventana
     setCentralWidget(vista);
 
-    // Cargar el sprite del Mocho desde el recurso Qt
     QPixmap pixmapMocho(":/sprites/nivel1/Mocho.png");
     if (pixmapMocho.isNull()) {
         qWarning("No se pudo cargar el sprite del Mocho desde :/sprites/nivel1/Mocho.png");
     }
 
-    // Crear el item con la imagen y colocarlo en el centro inferior de la escena
     m_mocho = new QGraphicsPixmapItem(pixmapMocho);
     m_mocho->setPos(150, 350);
     escena->addItem(m_mocho);
 
-    // Crear las mechas (objetivos) del lado derecho de la escena
+    // mechas en arco
     const QVector<QPointF> posicionesMechas = {
         QPointF(700, 180),
         QPointF(650, 270),
@@ -104,7 +99,7 @@ Juego::Juego(QWidget *parent)
         m_mechas.append(m);
     }
 
-    // Crear las rocas oscilantes (obstáculos entre el Mocho y las mechas)
+    // rocas oscilantes
     struct ParamRoca { double xCentro, yCentro, amplitud, omega, fase; };
     const QVector<ParamRoca> configRocas = {
         {350.0, 200.0, 60.0, 2.0, 0.0},
@@ -141,12 +136,11 @@ Juego::Juego(QWidget *parent)
     m_textoViento->setFont(QFont("Arial", 14, QFont::Bold));
     m_textoViento->setPos(320, 560);
 
-    // Game loop: timer de física a ~60 FPS
+    // timer de física a ~60 FPS
     m_timerFisica = new QTimer(this);
     connect(m_timerFisica, &QTimer::timeout, this, &Juego::actualizarFisica);
     m_timerFisica->start(16);
 
-    // Timer del nivel: cuenta regresiva de 90 segundos
     m_timerNivel = new QTimer(this);
     connect(m_timerNivel, &QTimer::timeout, this, &Juego::actualizarTiempo);
     m_timerNivel->start(1000);
@@ -165,7 +159,6 @@ Juego::Juego(QWidget *parent)
     m_musicaFondo->setLoops(QMediaPlayer::Infinite);
     m_musicaFondo->play();
 
-    // Efecto de sonido para explosiones
     m_efectoExplosion = new QSoundEffect(this);
     m_efectoExplosion->setSource(QUrl("qrc:/audio/explosion.wav"));
     m_efectoExplosion->setVolume(0.8);
@@ -175,7 +168,6 @@ Juego::Juego(QWidget *parent)
     m_efectoEnemigoDestruido->setSource(QUrl("qrc:/audio/enemigo_destruido.wav"));
     m_efectoEnemigoDestruido->setVolume(0.8);
 
-    // Efecto de derrota
     m_efectoDerrota = new QSoundEffect(this);
     m_efectoDerrota->setSource(QUrl("qrc:/audio/derrota.wav"));
     m_efectoDerrota->setVolume(0.8);
@@ -201,7 +193,6 @@ void Juego::mousePressEvent(QMouseEvent *event) {
         return;
     }
 
-    // Posición del click en coordenadas de la escena
     const QPointF puntoEscena = vista->mapToScene(event->pos());
 
     const double mochoX = m_mocho->x();
@@ -212,7 +203,6 @@ void Juego::mousePressEvent(QMouseEvent *event) {
     const double dy = mochoY - puntoEscena.y();
     const double angulo = qAtan2(dy, dx);
 
-    // Crear el tejo un poco arriba del Mocho y lanzarlo
     Tejo *tejo = new Tejo();
     tejo->setPos(mochoX + 50, mochoY - 30);
     escena->addItem(tejo);
@@ -237,7 +227,7 @@ void Juego::keyPressEvent(QKeyEvent *event) {
 }
 
 void Juego::actualizarFisica() {
-    // Actualizar todos los tejos y recoger los que se salieron de la escena
+    // tejos: avanzar y retirar los que salen
     for (int i = m_tejos.size() - 1; i >= 0; --i) {
         Tejo *tejo = m_tejos[i];
         tejo->actualizar(m_dtSegundos, m_vientoSolar);
@@ -256,7 +246,7 @@ void Juego::actualizarFisica() {
         roca->actualizar(m_dtSegundos);
     }
 
-    // Actualizar enemigos y comprobar si alcanzaron al Mocho (Nivel 2)
+    // enemigos: mover y comprobar alcance (Nivel 2)
     if (m_nivelActual == 2) {
         const double mochoX = m_mocho->x() + 25.0;
         const double mochoY = m_mocho->y() + 40.0;
@@ -280,7 +270,6 @@ void Juego::actualizarFisica() {
         }
     }
 
-    // Revisar impactos de tejos contra mechas, rocas y enemigos
     detectarColisiones();
 
     verificarFinJuego();
@@ -335,7 +324,6 @@ void Juego::detectarColisiones() {
         for (QGraphicsItem *item : items) {
             Mecha *mecha = dynamic_cast<Mecha*>(item);
             if (mecha && !mecha->explotada()) {
-                // La mecha estalla: sumar puntos y eliminarla
                 mecha->detonar();
                 m_puntaje += mecha->puntos();
                 actualizarHUD();
@@ -351,7 +339,6 @@ void Juego::detectarColisiones() {
                     return;
                 }
 
-                // El tejo también se destruye al impactar
                 escena->removeItem(tejo);
                 m_tejos.removeAt(i);
                 delete tejo;
